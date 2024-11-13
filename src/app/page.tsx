@@ -1,4 +1,3 @@
-// src/app/page.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -31,7 +30,15 @@ export default function Home() {
     setError(null);
 
     try {
-      const clientResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/clients`, {
+      // Asegúrate de que la URL base esté configurada
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      if (!baseUrl) {
+        throw new Error('URL del backend no configurada');
+      }
+
+      console.log('Enviando petición a:', `${baseUrl}/api/clients`);
+
+      const clientResponse = await fetch(`${baseUrl}/api/clients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,19 +46,27 @@ export default function Home() {
         body: JSON.stringify(formData),
       });
       
+      if (!clientResponse.ok) {
+        const errorText = await clientResponse.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Error del servidor: ${clientResponse.status}`);
+      }
+
       const clientData = await clientResponse.json();
-      if (!clientResponse.ok) throw new Error(clientData.message);
       
       const passResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/passes/${clientData.data._id}/generate`
+        `${baseUrl}/api/passes/${clientData.data._id}/generate`
       );
       
-      const passData = await passResponse.json();
-      if (!passResponse.ok) throw new Error(passData.message);
+      if (!passResponse.ok) {
+        throw new Error('Error al generar el pase');
+      }
 
+      const passData = await passResponse.json();
       setPassData(passData.data);
       setFormData({ name: '', email: '', phone: '' });
     } catch (err) {
+      console.error('Error completo:', err);
       setError(err instanceof Error ? err.message : 'Error al generar el pase');
     } finally {
       setLoading(false);
@@ -114,7 +129,7 @@ export default function Home() {
 
           <button
             type="submit"
-            className="w-full bg-[rgb(132,149,105)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity"
+            className="w-full bg-[rgb(132,149,105)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
             disabled={loading}
           >
             {loading ? 'Generando...' : 'Generar Pase'}
