@@ -1,173 +1,175 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Camera } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
+import React, { useState } from 'react';
+import Link from 'next/link';
 
-interface ScanResponse {
-  success: boolean;
-  data?: {
-    visits: number;
-    name: string;
-    nextReward: string;
-  };
-  message?: string;
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
 }
 
-export default function ScanPage() {
-  const [scanning, setScanning] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+interface PassData {
+  passUrl: string;
+  qrCode: string;
+}
+
+export default function Home() {
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    email: '',
+    phone: ''
+  });
+  const [passData, setPassData] = useState<PassData | null>(null);
   const [loading, setLoading] = useState(false);
-  const html5QrCode = useRef<Html5Qrcode | null>(null);
-  const processingRef = useRef(false);
-  const lastScannedRef = useRef<string>('');
-  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (html5QrCode.current) {
-        html5QrCode.current.stop().catch((err) => console.log("Error deteniendo escáner:", err));
-      }
-      if (scanTimeoutRef.current) {
-        clearTimeout(scanTimeoutRef.current);
-      }
-    };
-  }, []);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-  const handleScan = async (serialNumber: string) => {
     try {
-      if (processingRef.current || serialNumber === lastScannedRef.current) {
-        return;
+      // Asegúrate de que la URL base esté configurada
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      if (!baseUrl) {
+        throw new Error('URL del backend no configurada');
       }
 
-      processingRef.current = true;
-      lastScannedRef.current = serialNumber;
-      setLoading(true);
-      setError(null);
+      console.log('Enviando petición a:', `${baseUrl}/api/clients`);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/passes/${serialNumber}/scan`, {
+      const clientResponse = await fetch(`${baseUrl}/api/clients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify(formData),
       });
       
-      const data: ScanResponse = await response.json();
-      
-      if (response.ok && data.data) {
-        setResult(`¡Visita registrada! ${data.data.name} tiene ${data.data.visits} visitas. 
-                  ${data.data.visits >= 5 ? `¡Ha ganado: ${data.data.nextReward}!` : ''}`);
-        
-        // Parar el escáner después de un escaneo exitoso
-        await html5QrCode.current?.stop();
-        setScanning(false);
-      } else {
-        setError(data.message || 'Error al registrar la visita');
+      if (!clientResponse.ok) {
+        const errorText = await clientResponse.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Error del servidor: ${clientResponse.status}`);
       }
+
+      const clientData = await clientResponse.json();
+      
+      const passResponse = await fetch(
+        `${baseUrl}/api/passes/${clientData.data._id}/generate`
+      );
+      
+      if (!passResponse.ok) {
+        throw new Error('Error al generar el pase');
+      }
+
+      const passData = await passResponse.json();
+      setPassData(passData.data);
+      setFormData({ name: '', email: '', phone: '' });
     } catch (err) {
-      setError('Error al procesar el código QR');
       console.error('Error completo:', err);
+      setError(err instanceof Error ? err.message : 'Error al generar el pase');
     } finally {
       setLoading(false);
-      scanTimeoutRef.current = setTimeout(() => {
-        processingRef.current = false;
-        lastScannedRef.current = '';
-      }, 3000);
     }
-  };
-
-  const startScanning = () => {
-    setScanning(true);
-    setError(null);
-    setResult(null);
-    processingRef.current = false;
-    lastScannedRef.current = '';
-
-    if (html5QrCode.current) {
-      html5QrCode.current.clear();
-    }
-
-    html5QrCode.current = new Html5Qrcode("reader");
-    html5QrCode.current.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-      },
-      (decodedText) => handleScan(decodedText),
-      (errorMessage) => {
-        if (!errorMessage.includes("No QR code found")) {
-          setError("Error al escanear");
-        }
-      }
-    );
-  };
-
-  const stopScanning = () => {
-    html5QrCode.current?.stop().then(() => {
-      html5QrCode.current?.clear();
-      setScanning(false);
-    });
   };
 
   return (
-    <div className="min-h-screen bg-[rgb(132,149,105)] p-8">
+    <main className="min-h-screen bg-[rgb(132,149,105)] p-8">
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Escanear Pase</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Generador de Pases de Fidelidad</h1>
         
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative">
-            <span className="block pr-8">{error}</span>
-            <button 
-              onClick={() => setError(null)} 
-              className="absolute top-2 right-2 font-bold"
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Nombre
+            </label>
+            <input
+              type="text"
+              id="name"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Correo
+            </label>
+            <input
+              type="email"
+              id="email"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+              Teléfono
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              value={formData.phone}
+              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-[rgb(132,149,105)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? 'Generando...' : 'Generar Pase'}
+          </button>
+        </form>
+
+        {passData && (
+          <div className="mt-6 text-center">
+            <h2 className="text-lg font-semibold mb-4">¡Pase generado!</h2>
+            <div className="mb-4">
+              {passData.qrCode && (
+                <img
+                  src={passData.qrCode}
+                  alt="QR Code"
+                  className="mx-auto"
+                  width={200}
+                  height={200}
+                />
+              )}
+            </div>
+            <a
+              href={passData.passUrl}
+              className="text-blue-600 hover:text-blue-800 underline"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              ×
-            </button>
+              Descargar Pase
+            </a>
           </div>
         )}
 
-        {result && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 relative">
-            <span className="block pr-8">{result}</span>
-            <button 
-              onClick={() => {
-                setResult(null);
-                startScanning();
-              }} 
-              className="absolute top-2 right-2 font-bold"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
-        <button
-          onClick={() => scanning ? stopScanning() : startScanning()}
-          className="w-full bg-[rgb(132,149,105)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity mb-4 flex items-center justify-center"
-          disabled={loading}
-        >
-          {scanning ? 'Detener Escáner' : 'Iniciar Escáner'}
-          <Camera className="ml-2" size={20} />
-        </button>
-
-        <div id="reader" className="rounded-lg overflow-hidden" />
-
-        {scanning && !loading && (
-          <p className="text-sm text-gray-500 text-center mt-4">
-            Posiciona el código QR del pase dentro del cuadro de escaneo
-          </p>
-        )}
-
-        {loading && (
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[rgb(132,149,105)] mx-auto"></div>
-            <p className="text-gray-600 mt-2">Procesando escaneo...</p>
-          </div>
-        )}
+        <div className="mt-6 text-center">
+          <Link
+            href="/scan"
+            className="text-blue-600 hover:text-blue-800 underline"
+          >
+            Ir a Escanear Pases
+          </Link>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

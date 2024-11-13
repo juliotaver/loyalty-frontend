@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera } from 'lucide-react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 interface ScanResponse {
   success: boolean;
@@ -18,18 +18,34 @@ export default function ScanPage() {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [scanner, setScanner] = useState<Html5QrcodeScanner | null>(null);
+  const [loading, setLoading] = useState(false);
+  const html5QrCode = useRef<Html5Qrcode | null>(null);
+  const processingRef = useRef(false);
+  const lastScannedRef = useRef<string>('');
+  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     return () => {
-      if (scanner) {
-        scanner.clear();
+      if (html5QrCode.current) {
+        html5QrCode.current.stop().catch((err) => console.log("Error deteniendo escáner:", err));
+      }
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
       }
     };
-  }, [scanner]);
+  }, []);
 
   const handleScan = async (serialNumber: string) => {
     try {
+      if (processingRef.current || serialNumber === lastScannedRef.current) {
+        return;
+      }
+
+      processingRef.current = true;
+      lastScannedRef.current = serialNumber;
+      setLoading(true);
+      setError(null);
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/passes/${serialNumber}/scan`, {
         method: 'POST',
         headers: {
@@ -37,18 +53,27 @@ export default function ScanPage() {
         }
       });
       
-      const data = await response.json();
+      const data: ScanResponse = await response.json();
+      
       if (response.ok && data.data) {
         setResult(`¡Visita registrada! ${data.data.name} tiene ${data.data.visits} visitas. 
                   ${data.data.visits >= 5 ? `¡Ha ganado: ${data.data.nextReward}!` : ''}`);
-        if (scanner) {
-          scanner.pause();
-        }
+        
+        // Parar el escáner después de un escaneo exitoso
+        await html5QrCode.current?.stop();
+        setScanning(false);
       } else {
         setError(data.message || 'Error al registrar la visita');
       }
     } catch (err) {
       setError('Error al procesar el código QR');
+      console.error('Error completo:', err);
+    } finally {
+      setLoading(false);
+      scanTimeoutRef.current = setTimeout(() => {
+        processingRef.current = false;
+        lastScannedRef.current = '';
+      }, 3000);
     }
   };
 
@@ -56,41 +81,35 @@ export default function ScanPage() {
     setScanning(true);
     setError(null);
     setResult(null);
+    processingRef.current = false;
+    lastScannedRef.current = '';
 
-    const qrScanner = new Html5QrcodeScanner(
-      "reader", 
-      { 
+    if (html5QrCode.current) {
+      html5QrCode.current.clear();
+    }
+
+    html5QrCode.current = new Html5Qrcode("reader");
+    html5QrCode.current.start(
+      { facingMode: "environment" },
+      {
         fps: 10,
         qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        showTorchButtonIfSupported: true,
-        rememberLastUsedCamera: true
+        aspectRatio: 1.0
       },
-      false
-    );
-
-    qrScanner.render(
-      (decodedText) => {
-        handleScan(decodedText);
-      },
+      (decodedText) => handleScan(decodedText),
       (errorMessage) => {
-        // Ignoramos errores menores de escaneo
-        if (errorMessage.includes('No QR code found')) {
-          return;
+        if (!errorMessage.includes("No QR code found")) {
+          setError("Error al escanear");
         }
-        setError(errorMessage);
       }
     );
-
-    setScanner(qrScanner);
   };
 
   const stopScanning = () => {
-    if (scanner) {
-      scanner.clear();
-      setScanner(null);
-    }
-    setScanning(false);
+    html5QrCode.current?.stop().then(() => {
+      html5QrCode.current?.clear();
+      setScanning(false);
+    });
   };
 
   return (
@@ -116,9 +135,7 @@ export default function ScanPage() {
             <button 
               onClick={() => {
                 setResult(null);
-                if (scanner) {
-                  scanner.resume();
-                }
+                startScanning();
               }} 
               className="absolute top-2 right-2 font-bold"
             >
@@ -128,14 +145,9 @@ export default function ScanPage() {
         )}
 
         <button
-          onClick={() => {
-            if (scanning) {
-              stopScanning();
-            } else {
-              startScanning();
-            }
-          }}
+          onClick={() => scanning ? stopScanning() : startScanning()}
           className="w-full bg-[rgb(132,149,105)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity mb-4 flex items-center justify-center"
+          disabled={loading}
         >
           {scanning ? 'Detener Escáner' : 'Iniciar Escáner'}
           <Camera className="ml-2" size={20} />
@@ -143,10 +155,17 @@ export default function ScanPage() {
 
         <div id="reader" className="rounded-lg overflow-hidden" />
 
-        {scanning && (
+        {scanning && !loading && (
           <p className="text-sm text-gray-500 text-center mt-4">
             Posiciona el código QR del pase dentro del cuadro de escaneo
           </p>
+        )}
+
+        {loading && (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[rgb(132,149,105)] mx-auto"></div>
+            <p className="text-gray-600 mt-2">Procesando escaneo...</p>
+          </div>
         )}
       </div>
     </div>
