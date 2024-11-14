@@ -1,4 +1,3 @@
-// src/app/android/page.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -64,12 +63,20 @@ export default function AndroidPassPage() {
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Pases Android</h1>
-          <Link 
-            href="/dashboard" 
-            className="text-[rgb(132,149,105)] hover:underline"
-          >
-            Dashboard
-          </Link>
+          <div className="flex gap-4">
+            <Link 
+              href="/dashboard" 
+              className="text-[rgb(132,149,105)] hover:underline"
+            >
+              Dashboard
+            </Link>
+            <Link 
+              href="/" 
+              className="text-[rgb(132,149,105)] hover:underline"
+            >
+              iOS
+            </Link>
+          </div>
         </div>
 
         {error && (
@@ -144,6 +151,10 @@ export default function AndroidPassPage() {
           </div>
         )}
       </div>
+
+      <p className="text-xs text-[rgb(239,233,221)] mt-4 text-center italic">
+        Desarrollado por Julio T. para el amor de su vida ❤️
+      </p>
     </main>
   );
 }

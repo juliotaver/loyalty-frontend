@@ -73,7 +73,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[rgb(132,149,105)] p-8">
+    <main className="min-h-screen bg-[rgb(238,232,220)] p-8">
       <div className="max-w-md mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-[rgb(239,233,221)]">Pases de Fidelidad</h1>

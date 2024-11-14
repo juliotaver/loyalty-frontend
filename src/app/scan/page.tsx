@@ -113,7 +113,7 @@ export default function ScanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[rgb(132,149,105)] p-8">
+    <div className="min-h-screen bg-[rgb(238,232,220)] p-8">
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6">
         <h1 className="text-2xl font-bold text-center mb-6">Escanear Pase</h1>
         
@@ -146,7 +146,7 @@ export default function ScanPage() {
 
         <button
           onClick={() => scanning ? stopScanning() : startScanning()}
-          className="w-full bg-[rgb(132,149,105)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity mb-4 flex items-center justify-center"
+          className="w-full bg-[rgb(238,232,220)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity mb-4 flex items-center justify-center"
           disabled={loading}
         >
           {scanning ? 'Detener Escáner' : 'Iniciar Escáner'}
@@ -163,7 +163,7 @@ export default function ScanPage() {
 
         {loading && (
           <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[rgb(132,149,105)] mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[rgb(238,232,220))] mx-auto"></div>
             <p className="text-gray-600 mt-2">Procesando escaneo...</p>
           </div>
         )}
