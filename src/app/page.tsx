@@ -76,7 +76,7 @@ export default function Home() {
     <main className="min-h-screen bg-[rgb(132,149,105)] p-8">
       <div className="max-w-md mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-[rgb(239,233,221)]">Generador de Pases</h1>
+          <h1 className="text-2xl font-bold text-[rgb(239,233,221)]">Pases de Fidelidad</h1>
           <Link 
             href="/dashboard"
             className="bg-[rgb(239,233,221)] text-[rgb(132,149,105)] px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
@@ -84,10 +84,8 @@ export default function Home() {
             Dashboard
           </Link>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6">
-          <h1 className="text-2xl font-bold text-center mb-6">Generador de Pases de Fidelidad</h1>
-          
+
+        <div className="bg-white rounded-xl shadow-lg p-6">
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {error}
@@ -137,13 +135,22 @@ export default function Home() {
               />
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-[rgb(132,149,105)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
-              disabled={loading}
-            >
-              {loading ? 'Generando...' : 'Generar Pase'}
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                type="submit"
+                className="w-full bg-[rgb(132,149,105)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                disabled={loading}
+              >
+                {loading ? 'Generando...' : 'Generar Pase iOS'}
+              </button>
+              
+              <Link 
+                href="/android"
+                className="w-full bg-[rgb(239,233,221)] text-[rgb(132,149,105)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity text-center"
+              >
+                Generar Pase Android
+              </Link>
+            </div>
           </form>
 
           {passData && (
@@ -180,6 +187,10 @@ export default function Home() {
             </Link>
           </div>
         </div>
+
+        <p className="text-xs text-[rgb(239,233,221)] mt-4 text-center italic">
+          Desarrollado por Julio T. para el amor de su vida ❤️
+        </p>
       </div>
     </main>
   );
