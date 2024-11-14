@@ -138,7 +138,7 @@ export default function Home() {
             <div className="flex flex-col gap-2">
               <button
                 type="submit"
-                className="w-full bg-[rgb(132,149,105)] text-[rgb(132,149,105)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full bg-[rgb(132,149,105)] text-[rgb(239,233,221)] py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
                 disabled={loading}
               >
                 {loading ? 'Generando...' : 'Generar Pase iOS'}
