@@ -59,20 +59,20 @@ export default function AndroidPassPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[rgb(132,149,105)] p-8">
+    <main className="min-h-screen bg-[rgb(238,232,220)] p-8">
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Pases Android</h1>
           <div className="flex gap-4">
             <Link 
               href="/dashboard" 
-              className="text-[rgb(132,149,105)] hover:underline"
+              className="text-[rgb(238,232,220)] hover:underline"
             >
               Dashboard
             </Link>
             <Link 
               href="/" 
-              className="text-[rgb(132,149,105)] hover:underline"
+              className="text-[rgb(238,232,220)] hover:underline"
             >
               iOS
             </Link>
@@ -130,7 +130,7 @@ export default function AndroidPassPage() {
 
           <button
             type="submit"
-            className="w-full bg-[rgb(132,149,105)] text-white py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full bg-[rgb(238,232,220)] text-white py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
             disabled={loading}
           >
             {loading ? 'Generando...' : 'Generar Pase Android'}
@@ -142,7 +142,7 @@ export default function AndroidPassPage() {
             <h2 className="text-lg font-semibold mb-4">¡Pase generado!</h2>
             <a
               href={passData.saveUrl}
-              className="inline-block bg-[rgb(132,149,105)] text-white py-2 px-4 rounded-md hover:opacity-90 transition-opacity"
+              className="inline-block bg-[rgb(238,232,220)] text-white py-2 px-4 rounded-md hover:opacity-90 transition-opacity"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -152,7 +152,7 @@ export default function AndroidPassPage() {
         )}
       </div>
 
-      <p className="text-xs text-[rgb(239,233,221)] mt-4 text-center italic">
+      <p className="text-xs text-[rgb(132,149,105)] mt-4 text-center italic">
         Desarrollado por Julio T. para el amor de su vida ❤️
       </p>
     </main>
