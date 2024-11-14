@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import QRCode from 'qrcode';
 
 interface FormData {
   name: string;
@@ -22,6 +23,7 @@ export default function AndroidPassPage() {
     phone: ''
   });
   const [passData, setPassData] = useState<GooglePassData | null>(null);
+  const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +31,7 @@ export default function AndroidPassPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setQrCode(null);
 
     try {
       const clientResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/clients`, {
@@ -50,6 +53,11 @@ export default function AndroidPassPage() {
       if (!passResponse.ok) throw new Error(passData.message);
 
       setPassData(passData.data);
+      
+      // Generar código QR para la URL de Google Wallet
+      const qrCodeDataUrl = await QRCode.toDataURL(passData.data.saveUrl);
+      setQrCode(qrCodeDataUrl);
+      
       setFormData({ name: '', email: '', phone: '' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al generar el pase');
@@ -66,13 +74,13 @@ export default function AndroidPassPage() {
           <div className="flex gap-4">
             <Link 
               href="/dashboard" 
-              className="text-[rgb(238,232,220)] hover:underline"
+              className="text-[rgb(132,149,105)] hover:underline"
             >
               Dashboard
             </Link>
             <Link 
               href="/" 
-              className="text-[rgb(238,232,220)] hover:underline"
+              className="text-[rgb(132,149,105)] hover:underline"
             >
               iOS
             </Link>
@@ -130,19 +138,36 @@ export default function AndroidPassPage() {
 
           <button
             type="submit"
-            className="w-full bg-[rgb(238,232,220)] text-white py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full bg-[rgb(132,149,105)] text-white py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
             disabled={loading}
           >
             {loading ? 'Generando...' : 'Generar Pase Android'}
           </button>
         </form>
 
-        {passData && (
-          <div className="mt-6 text-center">
+        {passData && qrCode && (
+          <div className="mt-6 text-center space-y-4">
             <h2 className="text-lg font-semibold mb-4">¡Pase generado!</h2>
+            
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-4">
+                La clienta puede escanear este código QR con su teléfono para añadir el pase a Google Wallet:
+              </p>
+              <img
+                src={qrCode}
+                alt="QR Code para Google Wallet"
+                className="mx-auto"
+                width={200}
+                height={200}
+              />
+            </div>
+
+            <p className="text-sm text-gray-500">
+              O usar directamente el botón:
+            </p>
             <a
               href={passData.saveUrl}
-              className="inline-block bg-[rgb(238,232,220)] text-white py-2 px-4 rounded-md hover:opacity-90 transition-opacity"
+              className="inline-block bg-[rgb(132,149,105)] text-white py-2 px-4 rounded-md hover:opacity-90 transition-opacity"
               target="_blank"
               rel="noopener noreferrer"
             >
